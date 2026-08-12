@@ -1,5 +1,6 @@
 # Ngày 14 — AI Evaluation & Benchmarking Pipeline
 
+**Học viên:** Trần Đức Thiện | **MSSV:** 2A202602032  
 **AICB-P1 · Phase 1 · Ngày 14 trong 15 · K3**
 
 Lab này là bài **AI Evaluation**. Bạn sẽ hoàn thiện evaluation core trong

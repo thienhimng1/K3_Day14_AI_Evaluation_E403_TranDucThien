@@ -2,6 +2,7 @@
 
 ## AI Evaluation & Benchmarking · Lab Worksheet
 
+**Học viên:** Trần Đức Thiện | **MSSV:** 2A202602032  
 **Thời gian làm bài:** 09:15–12:00
 
 **Domain:** Northstar University Student Services

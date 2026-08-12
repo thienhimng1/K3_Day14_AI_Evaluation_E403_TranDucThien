@@ -2,6 +2,8 @@
 
 ## Evaluation Report & Failure Analysis
 
+**Học viên:** Trần Đức Thiện | **MSSV:** 2A202602032  
+
 Dùng kết quả thật trong `artifacts/benchmark_results.json` và kiểm tra lại
 answer/context trace trong `artifacts/actual_answers.json` trước khi kết luận.
 
