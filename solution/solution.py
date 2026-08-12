@@ -109,7 +109,7 @@ class EvalResult:
 
 
 # ---------------------------------------------------------------------------
-# Task 2 — RAGAS Evaluator (Simplified word-overlap heuristic)
+# Task 2 — RAGASEvaluator (Simplified word-overlap heuristic)
 # ---------------------------------------------------------------------------
 # In production, replace with actual RAGAS framework:
 #   from ragas import evaluate
@@ -593,10 +593,7 @@ class FailureAnalyzer:
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    # Sample golden dataset (mini version — use 20 pairs in actual lab)
-    # From lecture: stratified sampling = 5 Easy + 7 Medium + 5 Hard + 3 Adversarial
     qa_pairs = [
-        # Easy — factual lookup
         QAPair(
             question="What is RAG?",
             expected_answer="RAG stands for Retrieval-Augmented Generation, which combines retrieval with text generation.",
@@ -609,21 +606,18 @@ if __name__ == "__main__":
             context="France is a country in Western Europe. Its capital city is Paris.",
             metadata={"difficulty": "easy", "category": "factual"},
         ),
-        # Medium — multi-step reasoning
         QAPair(
             question="Explain backpropagation and why it matters for training",
             expected_answer="Backpropagation is an algorithm for training neural networks by computing gradients efficiently, enabling deep learning models to learn from errors.",
             context="Neural networks learn through gradient descent. Backpropagation efficiently computes these gradients layer by layer.",
             metadata={"difficulty": "medium", "category": "explanation"},
         ),
-        # Hard — ambiguous
         QAPair(
             question="Should I use RAG or fine-tuning for my chatbot?",
             expected_answer="It depends on the use case: RAG is better for frequently updated knowledge, fine-tuning for consistent style/behavior. Consider cost, latency, and data freshness.",
             context="RAG retrieves external documents at inference time. Fine-tuning modifies model weights during training.",
             metadata={"difficulty": "hard", "category": "comparison"},
         ),
-        # Adversarial — out-of-scope
         QAPair(
             question="What is the meaning of life?",
             expected_answer="This question is outside the scope of this system. I can help with AI and technology questions.",
@@ -636,37 +630,30 @@ if __name__ == "__main__":
     runner = BenchmarkRunner()
 
     def mock_agent(question: str) -> str:
-        """Simple mock agent for testing. Replace with your actual agent."""
         return f"Based on my knowledge: {question[:30]}... The answer involves key concepts."
 
-    # Run benchmark
     results = runner.run(qa_pairs, mock_agent, evaluator)
     report = runner.generate_report(results)
     print("=== Benchmark Report ===")
     for k, v in report.items():
         print(f"  {k}: {v}")
 
-    # Identify and analyze failures
     failures = runner.identify_failures(results, threshold=0.5)
     print(f"\n=== Failures ({len(failures)}) ===")
     analyzer = FailureAnalyzer()
 
-    # Categorize (from lecture: cluster before fix)
     categories = analyzer.categorize_failures(failures)
     print("Failure Categories:", categories)
 
-    # Root cause for each failure (from lecture: 5 Whys)
     for f in failures:
         cause = analyzer.find_root_cause(f)
         print(f"  Root cause: {cause}")
 
-    # Improvement suggestions (from lecture: continuous improvement loop)
     suggestions = analyzer.generate_improvement_suggestions(failures)
     print("\nImprovement Suggestions:")
     for s in suggestions:
         print(f"  - {s}")
 
-    # Generate improvement log (Markdown table)
     log = analyzer.generate_improvement_log(failures, suggestions)
     print("\n=== Improvement Log ===")
     print(log)
