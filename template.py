@@ -301,8 +301,7 @@ class LLMJudge:
     """
 
     def __init__(self, judge_llm_fn: Callable[[str], str]) -> None:
-        # TODO: store judge_llm_fn
-        pass
+        self.judge_llm_fn = judge_llm_fn
 
     def score_response(
         self,
@@ -310,54 +309,65 @@ class LLMJudge:
         answer: str,
         rubric: dict[str, Any],
     ) -> dict[str, Any]:
-        """
-        Score an AI response using the judge LLM.
+        prompt = (
+            f"Question: {question}\n"
+            f"Answer: {answer}\n"
+            f"Rubric: {json.dumps(rubric)}\n"
+            "Please evaluate the answer according to the rubric criteria and output JSON scores."
+        )
+        raw_response = self.judge_llm_fn(prompt)
+        scores: dict[str, float] = {}
 
-        Args:
-            question: The original question.
-            answer:   The AI's answer to score.
-            rubric:   Dict mapping criterion name → description.
-                      Example: {"accuracy": "Is the answer factually correct?",
-                                "clarity": "Is the answer clear and well-structured?"}
+        try:
+            parsed = json.loads(raw_response)
+            if isinstance(parsed, dict):
+                scores = {k: float(v) for k, v in parsed.items() if isinstance(v, (int, float))}
+        except Exception:
+            pass
 
-        Behavior:
-            1. Build a judge prompt that includes the question, answer, and rubric.
-            2. Call judge_llm_fn(prompt).
-            3. Parse the response for scores.
+        if not scores:
+            scores = {criterion: 0.5 for criterion in rubric}
 
-        For simplicity, if the LLM response can't be parsed as JSON scores,
-        return a default score of 0.5 for each criterion.
-
-        Returns:
-            {
-                "scores":    dict[str, float],  # criterion → score 0-1
-                "reasoning": str,               # raw LLM explanation
-            }
-        """
-        # TODO
-        raise NotImplementedError("Implement score_response")
+        return {
+            "scores": scores,
+            "reasoning": raw_response,
+        }
 
     def detect_bias(self, scores_batch: list[dict[str, Any]]) -> dict[str, Any]:
-        """
-        Detect potential bias patterns in a batch of judge scores.
+        all_scores: list[float] = []
+        for item in scores_batch:
+            if isinstance(item, dict) and "scores" in item and isinstance(item["scores"], dict):
+                for val in item["scores"].values():
+                    if isinstance(val, (int, float)):
+                        all_scores.append(float(val))
 
-        Checks:
-            positional_bias: Check if first response consistently scores higher
-            leniency_bias:   Average score > 0.8 across all criteria
-            severity_bias:   Average score < 0.3 across all criteria
+        avg_score = sum(all_scores) / len(all_scores) if all_scores else 0.5
+        leniency_bias = avg_score > 0.8
+        severity_bias = avg_score < 0.3
 
-        Args:
-            scores_batch: List of score dicts from score_response().
+        positional_bias = False
+        if len(scores_batch) > 1:
+            first_scores = [
+                float(v)
+                for v in scores_batch[0].get("scores", {}).values()
+                if isinstance(v, (int, float))
+            ]
+            rest_scores = [
+                float(v)
+                for item in scores_batch[1:]
+                for v in item.get("scores", {}).values()
+                if isinstance(v, (int, float))
+            ]
+            if first_scores and rest_scores:
+                first_avg = sum(first_scores) / len(first_scores)
+                rest_avg = sum(rest_scores) / len(rest_scores)
+                positional_bias = first_avg > (rest_avg + 0.1)
 
-        Returns:
-            {
-                "positional_bias": bool,
-                "leniency_bias":   bool,
-                "severity_bias":   bool,
-            }
-        """
-        # TODO
-        raise NotImplementedError("Implement detect_bias")
+        return {
+            "positional_bias": positional_bias,
+            "leniency_bias": leniency_bias,
+            "severity_bias": severity_bias,
+        }
 
 
 # ---------------------------------------------------------------------------
